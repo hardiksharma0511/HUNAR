@@ -12,7 +12,7 @@ const statusTone: Record<string, "terracotta" | "olive" | "gold" | "saffron"> = 
   cancelled: "terracotta",
 };
 
-const statusOptions = ["placed", "processing", "shipped", "delivered", "cancelled"];
+const statusOptions = ["placed", "processing", "shipped", "cancelled"];
 
 interface Props {
   order: Order;
@@ -44,7 +44,7 @@ export const SellerOrderCard = ({ order, onStatusChange, onTrackingSave }: Props
         </div>
         <div className="flex items-center gap-3">
           <Badge tone={statusTone[order.status]}>{order.status}</Badge>
-          {order.status !== "cancelled" && (
+          {order.status !== "cancelled" && order.status !== "delivered" && (
             <select
               value={order.status}
               onChange={(e) => onStatusChange(order._id, e.target.value)}
@@ -52,6 +52,9 @@ export const SellerOrderCard = ({ order, onStatusChange, onTrackingSave }: Props
             >
               {statusOptions.map((s) => <option key={s} value={s}>{s}</option>)}
             </select>
+          )}
+          {order.status === "delivered" && (
+            <span className="text-xs text-charcoal/45 italic">Confirmed by buyer</span>
           )}
         </div>
       </div>

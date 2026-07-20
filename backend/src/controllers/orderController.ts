@@ -13,6 +13,20 @@ export const createOrder = async (req: AuthRequest, res: Response) => {
     return res.status(400).json({ success: false, message: "Your cart is empty" });
   }
 
+  // Re-check stock at checkout time, since it may have changed since items
+  // were added to the cart (e.g. another buyer purchased the last one).
+  const insufficient = cart.items.find((item: any) => item.quantity > item.product.stock);
+  if (insufficient) {
+    const name = (insufficient.product as any).name;
+    const stock = (insufficient.product as any).stock;
+    return res.status(400).json({
+      success: false,
+      message: stock > 0
+        ? `Only ${stock} of "${name}" left in stock. Please update your cart.`
+        : `"${name}" just went out of stock. Please remove it from your cart.`,
+    });
+  }
+
   const orderItems = cart.items.map((item: any) => ({
     product: item.product._id,
     name: item.product.name,
@@ -92,6 +106,24 @@ export const updateOrderStatus = async (req: AuthRequest, res: Response) => {
   if (trackingId !== undefined) order.trackingId = trackingId;
   if (courierName !== undefined) order.courierName = courierName;
 
+  await order.save();
+  res.json({ success: true, order });
+};
+
+// @route PUT /api/orders/:id/mark-delivered  (buyer confirms they received their order)
+export const markDelivered = async (req: AuthRequest, res: Response) => {
+  const order = await Order.findById(req.params.id);
+  if (!order) return res.status(404).json({ success: false, message: "Order not found" });
+
+  if (order.buyer.toString() !== req.user!.id) {
+    return res.status(403).json({ success: false, message: "You can only confirm your own orders" });
+  }
+
+  if (order.status !== "shipped") {
+    return res.status(400).json({ success: false, message: "Only shipped orders can be marked as delivered" });
+  }
+
+  order.status = "delivered";
   await order.save();
   res.json({ success: true, order });
 };

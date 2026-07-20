@@ -7,6 +7,7 @@ import {
   getOrderById,
   updateOrderStatus,
   cancelOrder,
+  markDelivered,
 } from "../controllers/orderController";
 import { protect, requireRole } from "../middleware/auth";
 
@@ -19,5 +20,6 @@ router.get("/seller", requireRole("seller"), asyncHandler(getSellerOrders));
 router.get("/:id", asyncHandler(getOrderById));
 router.put("/:id/status", requireRole("seller"), asyncHandler(updateOrderStatus));
 router.put("/:id/cancel", asyncHandler(cancelOrder));
+router.put("/:id/mark-delivered", asyncHandler(markDelivered));
 
 export default router;

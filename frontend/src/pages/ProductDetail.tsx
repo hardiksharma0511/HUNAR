@@ -28,6 +28,7 @@ const ProductDetail = () => {
   const [reviewRating, setReviewRating] = useState(5);
   const [submittingReview, setSubmittingReview] = useState(false);
   const [reviewError, setReviewError] = useState("");
+  const [cartError, setCartError] = useState("");
 
   const load = () => {
     setLoading(true);
@@ -48,7 +49,12 @@ const ProductDetail = () => {
 
   const handleAddToCart = async () => {
     if (!user) return navigate("/login");
-    await addToCart(product._id, 1);
+    setCartError("");
+    try {
+      await addToCart(product._id, 1);
+    } catch (err: any) {
+      setCartError(err.response?.data?.message || "Could not add to cart");
+    }
   };
 
   const handleWishlist = async () => {
@@ -137,6 +143,7 @@ const ProductDetail = () => {
               <Heart className={`w-5 h-5 ${isWishlisted(product._id) ? "fill-terracotta text-terracotta" : "text-terracotta"}`} />
             </button>
           </div>
+          {cartError && <p className="text-sm text-red-600 mt-2">{cartError}</p>}
 
           <div className="flex gap-6 mt-6 text-xs text-charcoal/50">
             <span className="flex items-center gap-1.5"><ShieldCheck className="w-4 h-4 text-olive" /> Safe Payment</span>

@@ -113,6 +113,8 @@ const OrderDetail = () => {
   const [loading, setLoading] = useState(true);
   const [cancelling, setCancelling] = useState(false);
   const [cancelError, setCancelError] = useState("");
+  const [markingDelivered, setMarkingDelivered] = useState(false);
+  const [markError, setMarkError] = useState("");
   const justPlaced = (location.state as any)?.justPlaced;
 
   const load = () => {
@@ -132,6 +134,19 @@ const OrderDetail = () => {
       setCancelError(err.response?.data?.message || "Could not cancel this order.");
     } finally {
       setCancelling(false);
+    }
+  };
+
+  const handleMarkDelivered = async () => {
+    setMarkingDelivered(true);
+    setMarkError("");
+    try {
+      const { data } = await api.put(`/orders/${id}/mark-delivered`);
+      setOrder(data.order);
+    } catch (err: any) {
+      setMarkError(err.response?.data?.message || "Could not confirm delivery.");
+    } finally {
+      setMarkingDelivered(false);
     }
   };
 
@@ -223,6 +238,19 @@ const OrderDetail = () => {
           >
             Copy tracking number
           </button>
+        </div>
+      )}
+
+      {order.status === "shipped" && (
+        <div className="flex items-center justify-between bg-terracotta/10 rounded-clay px-5 py-4 mb-8 flex-wrap gap-3">
+          <div>
+            <p className="text-sm font-medium text-terracotta">Received your order?</p>
+            <p className="text-xs text-charcoal/60 mt-0.5">Confirm delivery to unlock rating & reviews for these products.</p>
+            {markError && <p className="text-xs text-red-600 mt-1">{markError}</p>}
+          </div>
+          <Button size="sm" onClick={handleMarkDelivered} disabled={markingDelivered}>
+            {markingDelivered ? "Confirming..." : "Mark as Delivered"}
+          </Button>
         </div>
       )}
 

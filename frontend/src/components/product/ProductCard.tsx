@@ -1,3 +1,4 @@
+import { useState } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import { motion } from "framer-motion";
 import { ShoppingBag, Heart } from "lucide-react";
@@ -12,14 +13,23 @@ export const ProductCard = ({ product }: { product: Product }) => {
   const { user } = useAuth();
   const { isWishlisted, toggleWishlist } = useWishlist();
   const navigate = useNavigate();
+  const [cartError, setCartError] = useState("");
   const sellerName = typeof product.seller === "object" ? product.seller.name : "";
   const finalPrice = product.discountPrice || product.price;
   const saved = isWishlisted(product._id);
+  const outOfStock = product.stock <= 0;
 
   const handleAdd = async (e: React.MouseEvent) => {
     e.preventDefault();
     if (!user) return navigate("/login");
-    await addToCart(product._id, 1);
+    if (outOfStock) return;
+    setCartError("");
+    try {
+      await addToCart(product._id, 1);
+    } catch (err: any) {
+      setCartError(err.response?.data?.message || "Could not add to cart");
+      setTimeout(() => setCartError(""), 3000);
+    }
   };
 
   const handleWishlist = async (e: React.MouseEvent) => {
@@ -39,14 +49,18 @@ export const ProductCard = ({ product }: { product: Product }) => {
           <img
             src={product.images[0]}
             alt={product.name}
-            className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500"
+            className={`w-full h-full object-cover group-hover:scale-105 transition-transform duration-500 ${outOfStock ? "grayscale opacity-70" : ""}`}
             loading="lazy"
           />
-          {product.discountPrice && (
+          {outOfStock ? (
+            <span className="absolute top-3 left-3 bg-charcoal/80 text-ivory text-xs px-2.5 py-1 rounded-full">
+              Out of Stock
+            </span>
+          ) : product.discountPrice ? (
             <span className="absolute top-3 left-3 bg-saffron text-ivory text-xs px-2.5 py-1 rounded-full">
               Sale
             </span>
-          )}
+          ) : null}
           <button
             onClick={handleWishlist}
             aria-label={saved ? "Remove from wishlist" : "Save to wishlist"}
@@ -69,12 +83,14 @@ export const ProductCard = ({ product }: { product: Product }) => {
             </div>
             <button
               onClick={handleAdd}
-              aria-label="Add to cart"
-              className="w-9 h-9 rounded-full bg-terracotta text-ivory flex items-center justify-center hover:bg-terracotta/90 transition-colors"
+              disabled={outOfStock}
+              aria-label={outOfStock ? "Out of stock" : "Add to cart"}
+              className="w-9 h-9 rounded-full bg-terracotta text-ivory flex items-center justify-center hover:bg-terracotta/90 transition-colors disabled:bg-charcoal/20 disabled:cursor-not-allowed"
             >
               <ShoppingBag className="w-4 h-4" />
             </button>
           </div>
+          {cartError && <p className="text-xs text-red-600 mt-2">{cartError}</p>}
         </div>
       </Link>
     </motion.div>
